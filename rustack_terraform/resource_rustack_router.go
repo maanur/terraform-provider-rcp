@@ -70,8 +70,18 @@ func resourceRustackRouterRead(ctx context.Context, d *schema.ResourceData, meta
 	for i, port := range router.Ports {
 		ports[i] = &port.ID
 	}
-
 	d.Set("ports", ports)
+
+	routes := make([]map[string]*string, len(router.Routes))
+	for i, route := range router.Routes {
+		routes[i] = map[string]*string{
+			"id":          &route.ID,
+			"destination": &route.Destination,
+			"nexthop":     &route.NextHop,
+		}
+	}
+	d.Set("routes", routes)
+
 	d.Set("vdc_id", router.Vdc.Id)
 	d.Set("tags", marshalTagNames(router.Tags))
 
@@ -108,6 +118,12 @@ func resourceRustackRouterUpdate(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	err = syncRouterRoutes(d, router)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	router.WaitLock()
 
 	return resourceRustackRouterRead(ctx, d, meta)
@@ -223,15 +239,24 @@ func createRouter(d *schema.ResourceData, manager *rustack.Manager) (diagErr dia
 
 	router := rustack.NewRouter(d.Get("name").(string), floatingIp)
 	router.Tags = unmarshalTagNames(d.Get("tags"))
+
 	portsIds := d.Get("ports").(*schema.Set).List()
 	ports := make([]*rustack.Port, len(portsIds))
-
 	for i, portId := range portsIds {
 		port, err := manager.GetPort(portId.(string))
 		if err != nil {
 			return diag.FromErr(err)
 		}
 		ports[i] = port
+	}
+
+	routes := d.Get("routes").(*schema.Set).List()
+	router.Routes = make([]*rustack.Route, len(routes))
+	for i, item := range routes {
+		route := item.(map[string]interface{})
+
+		newRoute := rustack.NewRoute(route["destination"].(string), route["nexthop"].(string))
+		router.Routes[i] = &newRoute
 	}
 
 	router.Vdc.Id = vdc.ID
@@ -373,6 +398,50 @@ func syncRouterPorts(d *schema.ResourceData, manager *rustack.Manager, router *r
 		}
 	}
 
+	return
+}
+
+func syncRouterRoutes(d *schema.ResourceData, router *rustack.Router) (err error) {
+	routes := d.Get("routes").(*schema.Set).List()
+	updateRequired := false
+
+	for _, knownRoute := range router.Routes {
+		found := false
+		for _, r := range routes {
+			wantedRoute := r.(map[string]interface{})
+			if knownRoute.Destination == wantedRoute["destination"] && knownRoute.NextHop == wantedRoute["nexthop"] {
+				found = true
+			}
+		}
+		if !found {
+			updateRequired = true
+			if err := knownRoute.Delete(); err != nil {
+				return fmt.Errorf("syncRouterRoutes: %w", err)
+			}
+		}
+	}
+
+	for _, r := range routes {
+		wantedRoute := r.(map[string]interface{})
+		found := false
+		for _, knownRoute := range router.Routes {
+			if knownRoute.Destination == wantedRoute["destination"] && knownRoute.NextHop == wantedRoute["nexthop"] {
+				found = true
+			}
+		}
+		if !found {
+			updateRequired = true
+			newRoute := rustack.NewRoute(wantedRoute["destination"].(string), wantedRoute["nexthop"].(string))
+			if err := router.CreateRoute(&newRoute); err != nil {
+				return fmt.Errorf("syncRouterRoutes: %w", err)
+			}
+		}
+	}
+	if updateRequired {
+		if err := router.Update(); err != nil {
+			return fmt.Errorf("syncRouterRoutes: %w", err)
+		}
+	}
 	return
 }
 

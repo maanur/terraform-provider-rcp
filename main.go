@@ -21,6 +21,7 @@ func main() {
 
 	if debugMode {
 		opts.Debug = true
+		opts.ProviderAddr = "rustack-cloud-platform/rcp"
 	}
 
 	plugin.Serve(opts)

@@ -23,7 +23,6 @@ func (args *Arguments) injectContextGetRouter() {
 }
 
 func (args *Arguments) injectResultRouter() {
-
 	args.merge(Arguments{
 		"id": {
 			Type:        schema.TypeString,
@@ -54,6 +53,7 @@ func (args *Arguments) injectResultListRouter() {
 }
 
 func (args *Arguments) injectCreateRouter() {
+	args.injectCreateListRoutes()
 	args.merge(Arguments{
 		"id": {
 			Type:        schema.TypeString,

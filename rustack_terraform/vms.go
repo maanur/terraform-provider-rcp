@@ -86,7 +86,7 @@ func (args *Arguments) injectCreateVm() {
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		"ports": {
-			Type:        schema.TypeList,
+			Type:        schema.TypeSet,
 			Optional:    true,
 			Computed:    true,
 			MinItems:    1,
@@ -96,7 +96,7 @@ func (args *Arguments) injectCreateVm() {
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		"networks": {
-			Type:         schema.TypeList,
+			Type:         schema.TypeSet,
 			Optional:     true,
 			Computed:     true,
 			ExactlyOneOf: []string{"ports", "networks"},
@@ -188,7 +188,7 @@ func (args *Arguments) injectResultVm() {
 			Description: "power of vw on/off",
 		},
 		"ports": {
-			Type:        schema.TypeList,
+			Type:        schema.TypeSet,
 			Computed:    true,
 			Description: "List of Ports connected to the Vm",
 			Elem: &schema.Resource{

@@ -33,18 +33,18 @@ func resourceRustackVm() *schema.Resource {
 }
 
 func getVmPortsIds(d *schema.ResourceData) (portsIds []string) {
-	if d.HasChange("ports") {
-		portsIdsValue := d.Get("ports").([]interface{})
-		portsIds = make([]string, 0, len(portsIdsValue))
-		for _, portIdValue := range portsIdsValue {
-			portsIds = append(portsIds, portIdValue.(string))
-		}
-	} else {
-		networks := d.Get("networks").([]interface{})
+	if d.HasChange("networks") {
+		networks := d.Get("networks").(*schema.Set).List()
 		portsIds = make([]string, 0, len(networks))
 		for _, network := range networks {
 			portMap := network.(map[string]interface{})
 			portsIds = append(portsIds, portMap["id"].(string))
+		}
+	} else {
+		portsIdsValue := d.Get("ports").(*schema.Set).List()
+		portsIds = make([]string, 0, len(portsIdsValue))
+		for _, portIdValue := range portsIdsValue {
+			portsIds = append(portsIds, portIdValue.(string))
 		}
 	}
 	return

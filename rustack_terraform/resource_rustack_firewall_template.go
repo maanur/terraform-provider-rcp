@@ -56,7 +56,7 @@ func resourceRustackFirewallTemplateRead(ctx context.Context, d *schema.Resource
 	manager := meta.(*CombinedConfig).rustackManager()
 	firewallTemplate, err := manager.GetFirewallTemplate(d.Id())
 	if err != nil {
-		if err.(*rustack.RustackApiError).Code() == 404 {
+		if err, ok := err.(*rustack.RustackApiError); ok && err.Code() == 404 {
 			d.SetId("")
 			return nil
 		} else {

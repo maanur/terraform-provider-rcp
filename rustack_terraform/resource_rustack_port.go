@@ -83,7 +83,7 @@ func resourceRustackPortRead(ctx context.Context, d *schema.ResourceData, meta i
 	manager := meta.(*CombinedConfig).rustackManager()
 	port, err := manager.GetPort(d.Id())
 	if err != nil {
-		if err.(*rustack.RustackApiError).Code() == 404 {
+		if err, ok := err.(*rustack.RustackApiError); ok && err.Code() == 404 {
 			d.SetId("")
 			return nil
 		} else {

@@ -125,7 +125,7 @@ func resourceRustackDnsRecordRead(ctx context.Context, d *schema.ResourceData, m
 	dns_record_id := d.Id()
 	dnsRecord, err := dns.GetDnsRecord(dns_record_id)
 	if err != nil {
-		if err.(*rustack.RustackApiError).Code() == 404 {
+		if err, ok := err.(*rustack.RustackApiError); ok && err.Code() == 404 {
 			d.SetId("")
 			return nil
 		} else {

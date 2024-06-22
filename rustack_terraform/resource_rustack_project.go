@@ -72,7 +72,7 @@ func resourceRustackProjectRead(ctx context.Context, d *schema.ResourceData, met
 	manager := meta.(*CombinedConfig).rustackManager()
 	project, err := manager.GetProject(d.Id())
 	if err != nil {
-		if err.(*rustack.RustackApiError).Code() == 404 {
+		if err, ok := err.(*rustack.RustackApiError); ok && err.Code() == 404 {
 			d.SetId("")
 			return nil
 		} else {

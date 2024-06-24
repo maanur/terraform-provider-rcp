@@ -28,7 +28,6 @@ func (args *Arguments) injectCreatePort() {
 		"firewall_templates": {
 			Type:        schema.TypeSet,
 			Optional:    true,
-			Computed:    true,
 			Description: "list of firewall templates ids of the Port",
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
